@@ -1,0 +1,2256 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Local Vault</title>
+  <meta name="theme-color" content="#16615c">
+  <meta name="application-name" content="Local Vault">
+  <meta name="apple-mobile-web-app-title" content="Local Vault">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f4;
+      --surface: #ffffff;
+      --panel: #fbfcfa;
+      --ink: #18201d;
+      --muted: #5b6861;
+      --subtle: #d8ded8;
+      --line: #c9d1cb;
+      --accent: #16615c;
+      --accent-2: #8d3f2c;
+      --accent-3: #3e5f91;
+      --danger: #a13232;
+      --danger-bg: #fff1f0;
+      --ok: #14764c;
+      --warning: #a66c00;
+      --shadow: 0 16px 36px rgba(24, 32, 29, 0.1);
+      --radius: 8px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0)),
+        var(--bg);
+      overflow-x: hidden;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .app {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+    }
+
+    .sidebar {
+      border-right: 1px solid var(--line);
+      background: var(--surface);
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand {
+      padding: 22px 22px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand-main {
+      min-width: 0;
+    }
+
+    .brand h1 {
+      font-size: 20px;
+      line-height: 1.1;
+      margin: 0 0 5px;
+      letter-spacing: 0;
+    }
+
+    .brand p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .icon-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: var(--radius);
+      background: #e8f1ee;
+      color: var(--accent);
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+    }
+
+    .icon {
+      width: 18px;
+      height: 18px;
+      display: block;
+      pointer-events: none;
+    }
+
+    .icon-lg {
+      width: 23px;
+      height: 23px;
+    }
+
+    .toolbar {
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+      min-width: 0;
+      align-content: start;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .input,
+    .textarea,
+    .select {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--ink);
+      padding: 10px 11px;
+      outline: none;
+      transition: border-color 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
+
+    .input:focus,
+    .textarea:focus,
+    .select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(22, 97, 92, 0.14);
+    }
+
+    .search-wrap {
+      position: relative;
+    }
+
+    .search-wrap .icon {
+      position: absolute;
+      left: 11px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+    }
+
+    .search-wrap input {
+      padding-left: 36px;
+    }
+
+    .category-filter {
+      grid-column: 1 / -1;
+    }
+
+    .btn,
+    .icon-btn {
+      border-radius: var(--radius);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 40px;
+      border: 1px solid transparent;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+      white-space: nowrap;
+    }
+
+    .btn {
+      padding: 9px 13px;
+      font-weight: 800;
+      font-size: 14px;
+      line-height: 1.2;
+    }
+
+    .icon-btn {
+      width: 40px;
+      padding: 0;
+      background: #eef2ef;
+      color: var(--ink);
+      border-color: #dde5df;
+    }
+
+    .btn:hover,
+    .icon-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(24, 32, 29, 0.08);
+    }
+
+    .btn:active,
+    .icon-btn:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    .primary {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    .secondary {
+      background: #eef2ef;
+      color: var(--ink);
+      border-color: #dde5df;
+    }
+
+    .quiet {
+      background: transparent;
+      color: var(--muted);
+      border-color: var(--line);
+    }
+
+    .danger {
+      background: var(--danger-bg);
+      color: var(--danger);
+      border-color: #f0c5c1;
+    }
+
+    .install-btn.hidden {
+      display: none;
+    }
+
+    .list {
+      overflow: auto;
+      padding: 10px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .vault-row {
+      width: 100%;
+      text-align: left;
+      border: 1px solid transparent;
+      background: transparent;
+      border-radius: var(--radius);
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 38px minmax(0, 1fr);
+      gap: 11px;
+      color: var(--ink);
+    }
+
+    .vault-row:hover,
+    .vault-row.active {
+      background: #eef5f2;
+      border-color: #d6e4df;
+    }
+
+    .category-heading {
+      margin: 10px 4px 2px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+
+    .site-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius);
+      display: grid;
+      place-items: center;
+      color: white;
+      background: var(--accent-3);
+      font-weight: 900;
+      text-transform: uppercase;
+      overflow: hidden;
+    }
+
+    .row-text {
+      min-width: 0;
+    }
+
+    .row-title {
+      font-size: 14px;
+      font-weight: 850;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .row-sub {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .empty-list {
+      margin: 26px 14px;
+      padding: 26px 18px;
+      border: 1px dashed var(--line);
+      border-radius: var(--radius);
+      text-align: center;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .main {
+      min-width: 0;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .topbar {
+      background: rgba(246, 247, 244, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--line);
+      padding: 16px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    .status-group,
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 34px;
+      border-radius: var(--radius);
+      background: #eaf1ed;
+      color: var(--accent);
+      border: 1px solid #d2e4dd;
+      padding: 6px 10px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .workspace {
+      padding: 24px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(300px, 440px);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .detail,
+    .generator,
+    .gate-panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .detail-header,
+    .panel-header {
+      border-bottom: 1px solid var(--line);
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .detail-header h2,
+    .panel-header h2 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.25;
+      letter-spacing: 0;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .detail-form,
+    .generator-body,
+    .gate-form {
+      padding: 20px;
+      display: grid;
+      gap: 15px;
+    }
+
+    .two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .password-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .inline-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 650;
+      line-height: 1.4;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .check-row input {
+      width: 17px;
+      height: 17px;
+      accent-color: var(--accent);
+    }
+
+    .meter {
+      height: 8px;
+      border-radius: 999px;
+      background: #e5e9e5;
+      overflow: hidden;
+    }
+
+    .meter-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--danger);
+      transition: width 0.18s ease, background 0.18s ease;
+    }
+
+    .strength-text {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .form-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      border-top: 1px solid var(--line);
+      padding-top: 16px;
+      margin-top: 2px;
+    }
+
+    .left-actions,
+    .right-actions {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      flex-wrap: wrap;
+    }
+
+    .generator {
+      overflow: hidden;
+    }
+
+    .range-line {
+      display: grid;
+      grid-template-columns: 1fr 54px;
+      gap: 12px;
+      align-items: center;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .length-badge {
+      text-align: center;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      padding: 8px 6px;
+      font-weight: 850;
+    }
+
+    .toggle-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .notice {
+      border-radius: var(--radius);
+      border: 1px solid #d5e1d9;
+      background: #f2f6f3;
+      padding: 11px 12px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .notice strong {
+      color: var(--ink);
+    }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: max(18px, env(safe-area-inset-bottom));
+      max-width: min(420px, calc(100vw - 36px));
+      background: #17211d;
+      color: white;
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      box-shadow: 0 18px 44px rgba(0, 0, 0, 0.2);
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      z-index: 5;
+      font-size: 14px;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .gate {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .gate-panel {
+      width: min(560px, 100%);
+      overflow: hidden;
+    }
+
+    .gate-header {
+      padding: 24px 24px 18px;
+      border-bottom: 1px solid var(--line);
+      display: grid;
+      gap: 12px;
+    }
+
+    .gate-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .gate-title h1 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+
+    .gate-header p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 8px;
+      background: #edf2ef;
+      border-radius: var(--radius);
+    }
+
+    .tab {
+      min-height: 38px;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 850;
+    }
+
+    .tab.active {
+      background: white;
+      color: var(--ink);
+      box-shadow: 0 5px 14px rgba(24, 32, 29, 0.08);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    .danger-zone {
+      border-top: 1px solid var(--line);
+      padding-top: 14px;
+      display: grid;
+      gap: 9px;
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        min-height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .list {
+        max-height: min(260px, 38dvh);
+      }
+
+      .workspace {
+        grid-template-columns: 1fr;
+        padding: 20px;
+      }
+    }
+
+    @media (max-width: 660px) {
+      .app {
+        display: block;
+      }
+
+      .brand,
+      .topbar,
+      .workspace {
+        padding-left: 15px;
+        padding-right: 15px;
+      }
+
+      .brand {
+        align-items: flex-start;
+      }
+
+      .brand h1 {
+        font-size: 18px;
+      }
+
+      .brand p,
+      .notice,
+      .strength-text {
+        overflow-wrap: anywhere;
+      }
+
+      .toolbar {
+        padding: 12px 15px;
+      }
+
+      .list {
+        max-height: 42dvh;
+        padding: 8px;
+      }
+
+      .vault-row {
+        grid-template-columns: 34px minmax(0, 1fr);
+        padding: 10px;
+      }
+
+      .site-avatar {
+        width: 34px;
+        height: 34px;
+      }
+
+      .topbar {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 12px;
+        padding-top: 12px;
+        padding-bottom: 12px;
+        position: static;
+      }
+
+      .toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .workspace {
+        padding-top: 14px;
+        padding-bottom: 20px;
+        gap: 14px;
+      }
+
+      .detail-header,
+      .panel-header {
+        padding: 14px 15px;
+        align-items: flex-start;
+      }
+
+      .detail-form,
+      .generator-body,
+      .gate-form {
+        padding: 15px;
+        gap: 13px;
+      }
+
+      .gate {
+        align-items: start;
+        padding: 12px;
+        padding-top: max(12px, env(safe-area-inset-top));
+        padding-right: max(12px, env(safe-area-inset-right));
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
+        padding-left: max(12px, env(safe-area-inset-left));
+      }
+
+      .gate-header {
+        padding: 18px 15px 15px;
+      }
+
+      .gate-title h1 {
+        font-size: 21px;
+      }
+
+      .input,
+      .textarea,
+      .select {
+        font-size: 16px;
+      }
+
+      .two,
+      .toggle-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .detail .password-row {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        align-items: stretch;
+      }
+
+      .detail .password-row .field,
+      .generator .password-row .input {
+        grid-column: 1 / -1;
+      }
+
+      .generator .password-row {
+        grid-template-columns: 1fr 1fr;
+        align-items: stretch;
+      }
+
+      .detail .password-row .icon-btn,
+      .generator .password-row .icon-btn {
+        width: 100%;
+        min-height: 44px;
+      }
+
+      .form-actions,
+      .left-actions,
+      .right-actions,
+      .actions,
+      .status-group {
+        width: 100%;
+      }
+
+      .actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .status-group {
+        align-items: stretch;
+        gap: 8px;
+      }
+
+      .status-pill {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .form-actions,
+      .left-actions,
+      .right-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        align-items: stretch;
+      }
+
+      .right-actions {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .btn {
+        flex: 1 1 auto;
+        min-height: 44px;
+        width: 100%;
+        min-width: 0;
+        white-space: normal;
+        text-align: center;
+      }
+
+      .btn span,
+      .status-pill span {
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .actions,
+      .right-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .detail .password-row {
+        grid-template-columns: repeat(3, minmax(44px, 1fr));
+      }
+
+      .toast {
+        right: 10px;
+        left: 10px;
+        max-width: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <svg aria-hidden="true" class="hidden">
+    <symbol id="i-lock" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11V8a5 5 0 0 1 10 0v3M6 11h12v10H6z"/>
+    </symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M12 5v14M5 12h14"/>
+    </symbol>
+    <symbol id="i-search" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2" d="m21 21-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16z"/>
+    </symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/>
+      <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/>
+    </symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="2" d="M8 8h11v13H8zM5 16H4V3h11v1"/>
+    </symbol>
+    <symbol id="i-dice" viewBox="0 0 24 24">
+      <rect x="4" y="4" width="16" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="2"/>
+      <circle cx="9" cy="9" r="1.3" fill="currentColor"/>
+      <circle cx="15" cy="9" r="1.3" fill="currentColor"/>
+      <circle cx="9" cy="15" r="1.3" fill="currentColor"/>
+      <circle cx="15" cy="15" r="1.3" fill="currentColor"/>
+    </symbol>
+    <symbol id="i-save" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="2" d="M5 3h12l2 2v16H5zM8 3v7h8V3M8 21v-7h8v7"/>
+    </symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M4 7h16M10 11v6M14 11v6M6 7l1 14h10l1-14M9 7V4h6v3"/>
+    </symbol>
+    <symbol id="i-download" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v12m0 0 5-5m-5 5-5-5M5 21h14"/>
+    </symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 21V9m0 0 5 5m-5-5-5 5M5 3h14"/>
+    </symbol>
+    <symbol id="i-key" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.5 9.5a5 5 0 1 1-2.1-4.08L22 15v4h-4v-3h-3v-3h-3l-1.2-1.2"/>
+    </symbol>
+    <symbol id="i-fingerprint" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M4 13a8 8 0 0 1 16 0M8 13a4 4 0 0 1 8 0M12 13v2M6 17c1.1 2.4 3.1 4 6 4M18 17c-.7 1.6-1.8 2.8-3.4 3.5M9 3.6A10.5 10.5 0 0 1 22 13M2 13A10.5 10.5 0 0 1 6 4.8M12 17c0 1.5-.4 2.8-1.2 4"/>
+    </symbol>
+    <symbol id="i-log-out" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 17l5-5-5-5M15 12H3M21 4v16"/>
+    </symbol>
+  </svg>
+
+  <main id="gate" class="gate">
+    <section class="gate-panel">
+      <div class="gate-header">
+        <div class="gate-title">
+          <div class="icon-mark"><svg class="icon icon-lg"><use href="#i-lock"></use></svg></div>
+          <h1>Local Vault</h1>
+        </div>
+        <p>この端末のブラウザ内に、マスターパスワードから作った鍵で暗号化して保存します。マスターパスワードは保存されません。</p>
+      </div>
+
+      <form id="gateForm" class="gate-form" autocomplete="off">
+        <div id="tabs" class="tabs">
+          <button type="button" class="tab active" data-mode="unlock">開く</button>
+          <button type="button" class="tab" data-mode="create">新規作成</button>
+        </div>
+
+        <div id="gateMessage" class="notice">
+          保存済みの保管庫がない場合は「新規作成」から始めてください。
+        </div>
+
+        <div class="field">
+          <label for="masterPassword">マスターパスワード</label>
+          <input id="masterPassword" class="input" type="password" minlength="12" autocomplete="current-password" required>
+        </div>
+
+        <div id="confirmWrap" class="field hidden">
+          <label for="masterConfirm">確認</label>
+          <input id="masterConfirm" class="input" type="password" minlength="12" autocomplete="new-password">
+        </div>
+
+        <div id="createBiometricWrap" class="field hidden">
+          <label class="check-row">
+            <input id="createWithBiometric" type="checkbox">
+            作成時にこの端末の生体認証も登録する
+          </label>
+        </div>
+
+        <button id="gateSubmit" class="btn primary" type="submit">
+          <svg class="icon"><use href="#i-key"></use></svg>
+          <span>保管庫を開く</span>
+        </button>
+
+        <button id="gateBiometric" class="btn secondary hidden" type="button">
+          <svg class="icon"><use href="#i-fingerprint"></use></svg>
+          <span>生体認証で開く</span>
+        </button>
+
+        <div class="inline-row">
+          <button id="gateImport" class="btn quiet" type="button">
+            <svg class="icon"><use href="#i-upload"></use></svg>
+            <span>暗号化バックアップを読み込む</span>
+          </button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <main id="vaultApp" class="app hidden">
+    <aside class="sidebar">
+      <header class="brand">
+        <div class="brand-main">
+          <h1>Local Vault</h1>
+          <p id="vaultCount">0件のログイン</p>
+        </div>
+        <div class="icon-mark"><svg class="icon icon-lg"><use href="#i-lock"></use></svg></div>
+      </header>
+
+      <div class="toolbar">
+        <div class="search-wrap">
+          <svg class="icon"><use href="#i-search"></use></svg>
+          <input id="search" class="input" type="search" placeholder="検索" autocomplete="off">
+        </div>
+        <button id="newItem" class="icon-btn" title="新規追加" aria-label="新規追加">
+          <svg class="icon"><use href="#i-plus"></use></svg>
+        </button>
+        <div class="category-filter">
+          <select id="categoryFilter" class="select" aria-label="カテゴリで表示">
+            <option value="">すべてのカテゴリ</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="itemList" class="list" aria-live="polite"></div>
+    </aside>
+
+    <section class="main">
+      <div class="topbar">
+        <div class="status-group">
+          <span class="status-pill"><svg class="icon"><use href="#i-lock"></use></svg><span>ロック解除中</span></span>
+          <span id="saveState" class="strength-text">保存済み</span>
+        </div>
+        <div class="actions">
+          <button id="setupBiometric" class="btn secondary" type="button">
+            <svg class="icon"><use href="#i-fingerprint"></use></svg>
+            <span>生体認証を設定</span>
+          </button>
+          <button id="exportVault" class="btn secondary" type="button">
+            <svg class="icon"><use href="#i-download"></use></svg>
+            <span>バックアップ</span>
+          </button>
+          <button id="importVault" class="btn secondary" type="button">
+            <svg class="icon"><use href="#i-upload"></use></svg>
+            <span>読み込み</span>
+          </button>
+          <button id="installApp" class="btn secondary install-btn hidden" type="button">
+            <svg class="icon"><use href="#i-download"></use></svg>
+            <span>インストール</span>
+          </button>
+          <button id="lockVault" class="btn quiet" type="button">
+            <svg class="icon"><use href="#i-log-out"></use></svg>
+            <span>ロック</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="workspace">
+        <section class="detail">
+          <div class="detail-header">
+            <h2 id="detailTitle">新しいログイン</h2>
+            <button id="copyUsername" class="icon-btn" type="button" title="ユーザー名をコピー" aria-label="ユーザー名をコピー">
+              <svg class="icon"><use href="#i-copy"></use></svg>
+            </button>
+          </div>
+
+          <form id="itemForm" class="detail-form" autocomplete="off">
+            <input id="itemId" type="hidden">
+            <div class="two">
+              <div class="field">
+                <label for="title">サイト名</label>
+                <input id="title" class="input" type="text" placeholder="例: Example Bank" required>
+              </div>
+              <div class="field">
+                <label for="url">URL</label>
+                <input id="url" class="input" type="url" placeholder="https://example.com">
+              </div>
+            </div>
+
+            <div class="two">
+              <div class="field">
+                <label for="username">ユーザー名</label>
+                <input id="username" class="input" type="text" autocomplete="off">
+              </div>
+              <div class="field">
+                <label for="category">カテゴリ</label>
+                <select id="category" class="select">
+                  <option>個人</option>
+                  <option>仕事</option>
+                  <option>金融</option>
+                  <option>買い物</option>
+                  <option>開発</option>
+                  <option>その他</option>
+                </select>
+                <input id="customCategory" class="input hidden" type="text" placeholder="新しいカテゴリ名">
+              </div>
+            </div>
+
+            <div class="password-row">
+              <div class="field">
+                <label for="password">パスワード</label>
+                <input id="password" class="input" type="password" autocomplete="new-password" required>
+              </div>
+              <button id="togglePassword" class="icon-btn" type="button" title="表示切替" aria-label="表示切替">
+                <svg class="icon"><use href="#i-eye"></use></svg>
+              </button>
+              <button id="fillGenerated" class="icon-btn" type="button" title="生成して入力" aria-label="生成して入力">
+                <svg class="icon"><use href="#i-dice"></use></svg>
+              </button>
+              <button id="copyPassword" class="icon-btn copy-password" type="button" title="パスワードをコピー" aria-label="パスワードをコピー">
+                <svg class="icon"><use href="#i-copy"></use></svg>
+              </button>
+            </div>
+
+            <div class="field">
+              <div class="inline-row">
+                <label>強度</label>
+                <span id="strengthLabel" class="strength-text">未入力</span>
+              </div>
+              <div class="meter"><div id="strengthBar" class="meter-fill"></div></div>
+            </div>
+
+            <div class="field">
+              <label for="notes">メモ</label>
+              <textarea id="notes" class="textarea" placeholder="復旧コードや秘密の質問は、必要最小限だけ保存してください。"></textarea>
+            </div>
+
+            <div class="form-actions">
+              <div class="left-actions">
+                <button id="deleteItem" class="btn danger" type="button">
+                  <svg class="icon"><use href="#i-trash"></use></svg>
+                  <span>削除</span>
+                </button>
+              </div>
+              <div class="right-actions">
+                <button id="resetForm" class="btn quiet" type="button">クリア</button>
+                <button class="btn primary" type="submit">
+                  <svg class="icon"><use href="#i-save"></use></svg>
+                  <span>保存</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </section>
+
+        <aside class="generator">
+          <div class="panel-header">
+            <h2>生成</h2>
+            <button id="regenerate" class="icon-btn" type="button" title="再生成" aria-label="再生成">
+              <svg class="icon"><use href="#i-dice"></use></svg>
+            </button>
+          </div>
+
+          <div class="generator-body">
+            <div class="field">
+              <label for="generatedPassword">生成されたパスワード</label>
+              <div class="password-row">
+                <input id="generatedPassword" class="input" type="text" readonly>
+                <button id="useGenerated" class="icon-btn" type="button" title="入力欄へ反映" aria-label="入力欄へ反映">
+                  <svg class="icon"><use href="#i-key"></use></svg>
+                </button>
+                <button id="copyGenerated" class="icon-btn" type="button" title="コピー" aria-label="コピー">
+                  <svg class="icon"><use href="#i-copy"></use></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="field">
+              <div class="inline-row">
+                <label for="length">長さ</label>
+                <span class="strength-text">16から64文字</span>
+              </div>
+              <div class="range-line">
+                <input id="length" type="range" min="16" max="64" value="24">
+                <span id="lengthValue" class="length-badge">24</span>
+              </div>
+            </div>
+
+            <div class="toggle-grid">
+              <label class="check-row"><input id="upper" type="checkbox" checked> 大文字</label>
+              <label class="check-row"><input id="lower" type="checkbox" checked> 小文字</label>
+              <label class="check-row"><input id="numbers" type="checkbox" checked> 数字</label>
+              <label class="check-row"><input id="symbols" type="checkbox" checked> 記号</label>
+              <label class="check-row"><input id="avoidAmbiguous" type="checkbox" checked> 紛らわしい文字を除外</label>
+            </div>
+
+            <div class="notice">
+              <strong>保存の仕組み:</strong> AES-GCMで暗号化し、PBKDF2でマスターパスワードから鍵を作ります。別端末へ移す時は暗号化バックアップを使います。
+            </div>
+
+            <div class="danger-zone">
+              <button id="deleteVault" class="btn danger" type="button">
+                <svg class="icon"><use href="#i-trash"></use></svg>
+                <span>この保管庫を削除</span>
+              </button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <input id="fileInput" class="file-input" type="file" accept="application/json,.json">
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const STORAGE_KEY = "local-vault.encrypted.v1";
+    const ITERATIONS = 310000;
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+
+    const state = {
+      key: null,
+      vault: null,
+      envelope: null,
+      masterPassword: "",
+      selectedId: null,
+      gateMode: "unlock",
+      revealPassword: false
+    };
+
+    const el = {
+      gate: document.getElementById("gate"),
+      gateForm: document.getElementById("gateForm"),
+      tabs: document.getElementById("tabs"),
+      gateMessage: document.getElementById("gateMessage"),
+      masterPassword: document.getElementById("masterPassword"),
+      masterConfirm: document.getElementById("masterConfirm"),
+      confirmWrap: document.getElementById("confirmWrap"),
+      createBiometricWrap: document.getElementById("createBiometricWrap"),
+      createWithBiometric: document.getElementById("createWithBiometric"),
+      gateSubmit: document.getElementById("gateSubmit"),
+      gateBiometric: document.getElementById("gateBiometric"),
+      gateImport: document.getElementById("gateImport"),
+      vaultApp: document.getElementById("vaultApp"),
+      vaultCount: document.getElementById("vaultCount"),
+      search: document.getElementById("search"),
+      categoryFilter: document.getElementById("categoryFilter"),
+      newItem: document.getElementById("newItem"),
+      itemList: document.getElementById("itemList"),
+      saveState: document.getElementById("saveState"),
+      setupBiometric: document.getElementById("setupBiometric"),
+      exportVault: document.getElementById("exportVault"),
+      importVault: document.getElementById("importVault"),
+      installApp: document.getElementById("installApp"),
+      lockVault: document.getElementById("lockVault"),
+      detailTitle: document.getElementById("detailTitle"),
+      itemForm: document.getElementById("itemForm"),
+      itemId: document.getElementById("itemId"),
+      title: document.getElementById("title"),
+      url: document.getElementById("url"),
+      username: document.getElementById("username"),
+      category: document.getElementById("category"),
+      customCategory: document.getElementById("customCategory"),
+      password: document.getElementById("password"),
+      notes: document.getElementById("notes"),
+      togglePassword: document.getElementById("togglePassword"),
+      fillGenerated: document.getElementById("fillGenerated"),
+      copyPassword: document.getElementById("copyPassword"),
+      copyUsername: document.getElementById("copyUsername"),
+      strengthLabel: document.getElementById("strengthLabel"),
+      strengthBar: document.getElementById("strengthBar"),
+      deleteItem: document.getElementById("deleteItem"),
+      resetForm: document.getElementById("resetForm"),
+      generatedPassword: document.getElementById("generatedPassword"),
+      regenerate: document.getElementById("regenerate"),
+      useGenerated: document.getElementById("useGenerated"),
+      copyGenerated: document.getElementById("copyGenerated"),
+      length: document.getElementById("length"),
+      lengthValue: document.getElementById("lengthValue"),
+      upper: document.getElementById("upper"),
+      lower: document.getElementById("lower"),
+      numbers: document.getElementById("numbers"),
+      symbols: document.getElementById("symbols"),
+      avoidAmbiguous: document.getElementById("avoidAmbiguous"),
+      deleteVault: document.getElementById("deleteVault"),
+      fileInput: document.getElementById("fileInput"),
+      toast: document.getElementById("toast")
+    };
+
+    const charsets = {
+      upper: "ABCDEFGHJKLMNPQRSTUVWXYZ",
+      lower: "abcdefghijkmnopqrstuvwxyz",
+      numbers: "23456789",
+      symbols: "!@#$%^&*()-_=+[]{};:,.?/|~"
+    };
+
+    const DEFAULT_CATEGORIES = ["個人", "仕事", "金融", "買い物", "開発"];
+    const CUSTOM_CATEGORY_OPTION = "その他";
+
+    let deferredInstallPrompt = null;
+
+    function bytesToBase64(bytes) {
+      let binary = "";
+      bytes.forEach((byte) => binary += String.fromCharCode(byte));
+      return btoa(binary);
+    }
+
+    function base64ToBytes(value) {
+      const binary = atob(value);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i += 1) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return bytes;
+    }
+
+    function bytesToBase64Url(bytes) {
+      return bytesToBase64(bytes)
+        .replaceAll("+", "-")
+        .replaceAll("/", "_")
+        .replaceAll("=", "");
+    }
+
+    function base64UrlToBytes(value) {
+      const base64 = value.replaceAll("-", "+").replaceAll("_", "/");
+      const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+      return base64ToBytes(padded);
+    }
+
+    function randomBytes(length) {
+      const bytes = new Uint8Array(length);
+      crypto.getRandomValues(bytes);
+      return bytes;
+    }
+
+    async function deriveKey(masterPassword, salt) {
+      const material = await crypto.subtle.importKey(
+        "raw",
+        encoder.encode(masterPassword),
+        "PBKDF2",
+        false,
+        ["deriveKey"]
+      );
+
+      return crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt, iterations: ITERATIONS, hash: "SHA-256" },
+        material,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["encrypt", "decrypt"]
+      );
+    }
+
+    async function deriveBiometricWrapKey(prfSecret) {
+      const material = await crypto.subtle.importKey(
+        "raw",
+        prfSecret,
+        "HKDF",
+        false,
+        ["deriveKey"]
+      );
+
+      return crypto.subtle.deriveKey(
+        {
+          name: "HKDF",
+          hash: "SHA-256",
+          salt: encoder.encode("Local Vault biometric wrap salt v1"),
+          info: encoder.encode("master password wrap")
+        },
+        material,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["encrypt", "decrypt"]
+      );
+    }
+
+    async function encryptText(value, key) {
+      const iv = randomBytes(12);
+      const ciphertext = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv },
+        key,
+        encoder.encode(value)
+      );
+      return {
+        iv: bytesToBase64(iv),
+        ciphertext: bytesToBase64(new Uint8Array(ciphertext))
+      };
+    }
+
+    async function decryptText(payload, key) {
+      const iv = base64ToBytes(payload.iv);
+      const ciphertext = base64ToBytes(payload.ciphertext);
+      const plaintext = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ciphertext);
+      return decoder.decode(plaintext);
+    }
+
+    async function encryptVault(vault, key, salt, existingEnvelope = null) {
+      const iv = randomBytes(12);
+      const plaintext = encoder.encode(JSON.stringify(vault));
+      const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, plaintext);
+
+      const envelope = {
+        app: "Local Vault",
+        version: 1,
+        kdf: {
+          name: "PBKDF2",
+          hash: "SHA-256",
+          iterations: ITERATIONS,
+          salt: bytesToBase64(salt)
+        },
+        cipher: {
+          name: "AES-GCM",
+          iv: bytesToBase64(iv),
+          ciphertext: bytesToBase64(new Uint8Array(ciphertext))
+        }
+      };
+
+      if (existingEnvelope?.biometric) {
+        envelope.biometric = existingEnvelope.biometric;
+      }
+
+      return envelope;
+    }
+
+    async function decryptVault(envelope, key) {
+      const iv = base64ToBytes(envelope.cipher.iv);
+      const ciphertext = base64ToBytes(envelope.cipher.ciphertext);
+      const plaintext = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ciphertext);
+      return JSON.parse(decoder.decode(plaintext));
+    }
+
+    function getEnvelope() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    }
+
+    function setGateMode(mode) {
+      state.gateMode = mode;
+      [...el.tabs.querySelectorAll(".tab")].forEach((tab) => {
+        tab.classList.toggle("active", tab.dataset.mode === mode);
+      });
+      el.confirmWrap.classList.toggle("hidden", mode !== "create");
+      el.createBiometricWrap.classList.toggle("hidden", mode !== "create");
+      el.masterConfirm.required = mode === "create";
+      if (mode !== "create") {
+        el.createWithBiometric.checked = false;
+      }
+      el.gateSubmit.querySelector("span").textContent = mode === "create" ? "保管庫を作成" : "保管庫を開く";
+      const hasVault = Boolean(getEnvelope());
+      el.gateMessage.textContent = mode === "create"
+        ? "12文字以上の強いマスターパスワードを使ってください。忘れると復号できません。"
+        : hasVault
+          ? biometricConfigured()
+            ? "マスターパスワード、または登録済みの生体認証で開けます。"
+            : "マスターパスワードを入力してください。"
+          : "保存済みの保管庫がない場合は「新規作成」から始めてください。";
+      updateBiometricControls();
+    }
+
+    function showGate() {
+      state.key = null;
+      state.vault = null;
+      state.envelope = null;
+      state.masterPassword = "";
+      state.selectedId = null;
+      el.masterPassword.value = "";
+      el.masterConfirm.value = "";
+      el.gate.classList.remove("hidden");
+      el.vaultApp.classList.add("hidden");
+      setGateMode(getEnvelope() ? "unlock" : "create");
+      updateBiometricControls();
+      el.masterPassword.focus();
+    }
+
+    function showVault() {
+      el.gate.classList.add("hidden");
+      el.vaultApp.classList.remove("hidden");
+      state.selectedId = state.vault.items[0]?.id || null;
+      updateBiometricControls();
+      renderList();
+      loadSelected();
+      generatePassword();
+    }
+
+    function toast(message) {
+      el.toast.textContent = message;
+      el.toast.classList.add("show");
+      window.clearTimeout(toast.timer);
+      toast.timer = window.setTimeout(() => el.toast.classList.remove("show"), 2400);
+    }
+
+    function nowIso() {
+      return new Date().toISOString();
+    }
+
+    function makeId() {
+      return `${Date.now().toString(36)}-${bytesToBase64(randomBytes(6)).replace(/[+/=]/g, "")}`;
+    }
+
+    function normalizeUrl(url) {
+      const value = url.trim();
+      if (!value) return "";
+      if (/^https?:\/\//i.test(value)) return value;
+      return `https://${value}`;
+    }
+
+    function avatarText(item) {
+      const source = item.title || item.username || "?";
+      return source.trim().slice(0, 1) || "?";
+    }
+
+    function itemCategory(item) {
+      return String(item.category || "未分類").trim() || "未分類";
+    }
+
+    function categoriesWithItems() {
+      const categories = new Set();
+      (state.vault?.items || []).forEach((item) => categories.add(itemCategory(item)));
+      return [...categories].sort((a, b) => a.localeCompare(b, "ja"));
+    }
+
+    function renderCategoryFilter() {
+      const current = el.categoryFilter.value;
+      const categories = categoriesWithItems();
+      el.categoryFilter.innerHTML = "";
+
+      const allOption = document.createElement("option");
+      allOption.value = "";
+      allOption.textContent = "すべてのカテゴリ";
+      el.categoryFilter.append(allOption);
+
+      categories.forEach((category) => {
+        const option = document.createElement("option");
+        option.value = category;
+        option.textContent = category;
+        el.categoryFilter.append(option);
+      });
+
+      el.categoryFilter.value = categories.includes(current) ? current : "";
+    }
+
+    function filteredItems() {
+      const query = el.search.value.trim().toLowerCase();
+      const activeCategory = el.categoryFilter.value;
+      const items = [...state.vault.items].sort((a, b) => (
+        itemCategory(a).localeCompare(itemCategory(b), "ja")
+        || (a.title || "").localeCompare(b.title || "", "ja")
+      ));
+      return items.filter((item) => {
+        const matchesCategory = !activeCategory || itemCategory(item) === activeCategory;
+        const matchesQuery = !query || [
+          item.title,
+          item.username,
+          item.url,
+          item.category,
+          item.notes
+        ].some((field) => String(field || "").toLowerCase().includes(query));
+        return matchesCategory && matchesQuery;
+      });
+    }
+
+    function renderList() {
+      renderCategoryFilter();
+      const items = filteredItems();
+      el.itemList.innerHTML = "";
+      const activeCategory = el.categoryFilter.value;
+      el.vaultCount.textContent = activeCategory
+        ? `${activeCategory}: ${items.length}件 / 全${state.vault.items.length}件`
+        : `${state.vault.items.length}件のログイン`;
+
+      if (!items.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty-list";
+        empty.textContent = state.vault.items.length ? "この条件に一致する項目がありません。" : "まだ項目がありません。右上の追加ボタンで最初のログインを保存できます。";
+        el.itemList.append(empty);
+        return;
+      }
+
+      let headingCategory = "";
+      items.forEach((item) => {
+        const category = itemCategory(item);
+        if (category !== headingCategory) {
+          headingCategory = category;
+          const heading = document.createElement("div");
+          heading.className = "category-heading";
+          heading.textContent = category;
+          el.itemList.append(heading);
+        }
+
+        const row = document.createElement("button");
+        row.type = "button";
+        row.className = `vault-row${item.id === state.selectedId ? " active" : ""}`;
+        row.dataset.id = item.id;
+        row.innerHTML = `
+          <span class="site-avatar">${escapeHtml(avatarText(item))}</span>
+          <span class="row-text">
+            <span class="row-title">${escapeHtml(item.title || "無題")}</span>
+            <span class="row-sub">${escapeHtml(item.username || item.url || item.category || "")}</span>
+          </span>
+        `;
+        row.addEventListener("click", () => {
+          state.selectedId = item.id;
+          renderList();
+          loadSelected();
+        });
+        el.itemList.append(row);
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function categoryChoices(selectedCategory = "") {
+      const choices = new Set(DEFAULT_CATEGORIES);
+      (state.vault?.items || []).forEach((item) => {
+        const category = String(item.category || "").trim();
+        if (category && category !== CUSTOM_CATEGORY_OPTION) {
+          choices.add(category);
+        }
+      });
+
+      const selected = String(selectedCategory || "").trim();
+      if (selected && selected !== CUSTOM_CATEGORY_OPTION) {
+        choices.add(selected);
+      }
+
+      return [...choices];
+    }
+
+    function renderCategoryOptions(selectedCategory = "個人") {
+      const selected = String(selectedCategory || "個人").trim();
+      const choices = categoryChoices(selected);
+      el.category.innerHTML = "";
+
+      choices.forEach((choice) => {
+        const option = document.createElement("option");
+        option.value = choice;
+        option.textContent = choice;
+        el.category.append(option);
+      });
+
+      const customOption = document.createElement("option");
+      customOption.value = CUSTOM_CATEGORY_OPTION;
+      customOption.textContent = CUSTOM_CATEGORY_OPTION;
+      el.category.append(customOption);
+
+      el.category.value = choices.includes(selected) ? selected : "個人";
+      updateCategoryCustomVisibility();
+    }
+
+    function updateCategoryCustomVisibility() {
+      const isCustom = el.category.value === CUSTOM_CATEGORY_OPTION;
+      el.customCategory.classList.toggle("hidden", !isCustom);
+      el.customCategory.required = isCustom;
+      if (!isCustom) {
+        el.customCategory.value = "";
+      }
+    }
+
+    function selectedCategory() {
+      if (el.category.value !== CUSTOM_CATEGORY_OPTION) {
+        return el.category.value;
+      }
+      return el.customCategory.value.trim() || CUSTOM_CATEGORY_OPTION;
+    }
+
+    function emptyForm() {
+      state.selectedId = null;
+      el.itemId.value = "";
+      el.title.value = "";
+      el.url.value = "";
+      el.username.value = "";
+      el.customCategory.value = "";
+      renderCategoryOptions("個人");
+      el.password.value = "";
+      el.notes.value = "";
+      el.detailTitle.textContent = "新しいログイン";
+      el.deleteItem.disabled = true;
+      updateStrength();
+      renderList();
+      el.title.focus();
+    }
+
+    function loadSelected() {
+      const item = state.vault.items.find((entry) => entry.id === state.selectedId);
+      if (!item) {
+        emptyForm();
+        return;
+      }
+
+      el.itemId.value = item.id;
+      el.title.value = item.title || "";
+      el.url.value = item.url || "";
+      el.username.value = item.username || "";
+      renderCategoryOptions(item.category || "個人");
+      el.password.value = item.password || "";
+      el.notes.value = item.notes || "";
+      el.detailTitle.textContent = item.title || "ログイン";
+      el.deleteItem.disabled = false;
+      updateStrength();
+    }
+
+    async function saveEnvelope() {
+      state.vault.updatedAt = nowIso();
+      el.saveState.textContent = "保存中...";
+      const salt = base64ToBytes(state.envelope.kdf.salt);
+      state.envelope = await encryptVault(state.vault, state.key, salt, state.envelope);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.envelope));
+      el.saveState.textContent = `保存済み ${new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}`;
+    }
+
+    function formToItem() {
+      const id = el.itemId.value || makeId();
+      return {
+        id,
+        title: el.title.value.trim(),
+        url: normalizeUrl(el.url.value),
+        username: el.username.value.trim(),
+        category: selectedCategory(),
+        password: el.password.value,
+        notes: el.notes.value.trim(),
+        createdAt: state.vault.items.find((entry) => entry.id === id)?.createdAt || nowIso(),
+        updatedAt: nowIso()
+      };
+    }
+
+    async function copyText(text, label) {
+      if (!text) {
+        toast("コピーする値がありません。");
+        return;
+      }
+
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const area = document.createElement("textarea");
+          area.value = text;
+          area.style.position = "fixed";
+          area.style.opacity = "0";
+          document.body.append(area);
+          area.select();
+          document.execCommand("copy");
+          area.remove();
+        }
+        toast(`${label}をコピーしました。`);
+      } catch {
+        toast("コピーに失敗しました。");
+      }
+    }
+
+    function calculateStrength(password) {
+      if (!password) return { label: "未入力", score: 0, color: "var(--danger)" };
+
+      let score = 0;
+      const length = password.length;
+      const sets = [
+        /[a-z]/.test(password),
+        /[A-Z]/.test(password),
+        /[0-9]/.test(password),
+        /[^a-zA-Z0-9]/.test(password)
+      ].filter(Boolean).length;
+
+      score += Math.min(45, length * 2.2);
+      score += sets * 12;
+      if (length >= 20) score += 10;
+      if (/(.)\1{2,}/.test(password)) score -= 15;
+      if (/^(?:password|qwerty|admin|letmein|welcome)/i.test(password)) score -= 30;
+
+      const normalized = Math.max(5, Math.min(100, Math.round(score)));
+      if (normalized >= 84) return { label: "強い", score: normalized, color: "var(--ok)" };
+      if (normalized >= 62) return { label: "良好", score: normalized, color: "var(--accent-3)" };
+      if (normalized >= 38) return { label: "弱め", score: normalized, color: "var(--warning)" };
+      return { label: "弱い", score: normalized, color: "var(--danger)" };
+    }
+
+    function updateStrength() {
+      const result = calculateStrength(el.password.value);
+      el.strengthLabel.textContent = result.label;
+      el.strengthBar.style.width = `${result.score}%`;
+      el.strengthBar.style.background = result.color;
+    }
+
+    function selectedGeneratorSets() {
+      const sets = [];
+      if (el.upper.checked) sets.push(charsets.upper);
+      if (el.lower.checked) sets.push(charsets.lower);
+      if (el.numbers.checked) sets.push(charsets.numbers);
+      if (el.symbols.checked) sets.push(charsets.symbols);
+      return sets;
+    }
+
+    function secureIndex(max) {
+      const limit = Math.floor(256 / max) * max;
+      let value = 0;
+      do {
+        value = randomBytes(1)[0];
+      } while (value >= limit);
+      return value % max;
+    }
+
+    function shuffle(value) {
+      const chars = [...value];
+      for (let i = chars.length - 1; i > 0; i -= 1) {
+        const j = secureIndex(i + 1);
+        [chars[i], chars[j]] = [chars[j], chars[i]];
+      }
+      return chars.join("");
+    }
+
+    function generatePassword() {
+      const length = Number(el.length.value);
+      el.lengthValue.textContent = String(length);
+      const sets = selectedGeneratorSets();
+
+      if (!sets.length) {
+        el.generatedPassword.value = "";
+        toast("少なくとも1種類の文字を選んでください。");
+        return "";
+      }
+
+      let pool = sets.join("");
+      if (!el.avoidAmbiguous.checked) {
+        pool += "0OIl1";
+      }
+
+      let password = sets.map((set) => set[secureIndex(set.length)]).join("");
+      while (password.length < length) {
+        password += pool[secureIndex(pool.length)];
+      }
+
+      password = shuffle(password);
+      el.generatedPassword.value = password;
+      return password;
+    }
+
+    function downloadFile(filename, content, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function validEnvelope(envelope) {
+      return envelope
+        && envelope.version === 1
+        && envelope.kdf?.salt
+        && envelope.cipher?.iv
+        && envelope.cipher?.ciphertext;
+    }
+
+    function biometricConfigured(envelope = getEnvelope()) {
+      return validEnvelope(envelope)
+        && envelope.biometric?.credentialId
+        && envelope.biometric?.prfSalt
+        && envelope.biometric?.wrappedMaster?.iv
+        && envelope.biometric?.wrappedMaster?.ciphertext;
+    }
+
+    function webAuthnSupported() {
+      return Boolean(
+        window.isSecureContext
+        && window.PublicKeyCredential
+        && navigator.credentials
+        && navigator.credentials.create
+        && navigator.credentials.get
+      );
+    }
+
+    async function platformBiometricSupported() {
+      if (!webAuthnSupported()) return false;
+      if (!PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) return true;
+      return PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+    }
+
+    function getPrfSecret(credential) {
+      const results = credential.getClientExtensionResults?.();
+      const first = results?.prf?.results?.first;
+      return first ? new Uint8Array(first) : null;
+    }
+
+    async function getBiometricPrfSecret(credentialId, prfSalt) {
+      if (!webAuthnSupported()) {
+        throw new Error("WebAuthn is not available");
+      }
+
+      const assertion = await navigator.credentials.get({
+        publicKey: {
+          challenge: randomBytes(32),
+          allowCredentials: [{
+            id: base64UrlToBytes(credentialId),
+            type: "public-key"
+          }],
+          userVerification: "required",
+          extensions: {
+            prf: {
+              eval: { first: prfSalt }
+            }
+          },
+          timeout: 60000
+        }
+      });
+
+      const secret = getPrfSecret(assertion);
+      if (!secret) {
+        throw new Error("WebAuthn PRF output was not returned");
+      }
+      return secret;
+    }
+
+    async function createBiometricCredential() {
+      if (!await platformBiometricSupported()) {
+        throw new Error("No user-verifying platform authenticator is available");
+      }
+
+      const userId = randomBytes(16);
+      const prfSalt = randomBytes(32);
+      const credential = await navigator.credentials.create({
+        publicKey: {
+          challenge: randomBytes(32),
+          rp: { name: "Local Vault" },
+          user: {
+            id: userId,
+            name: "local-vault",
+            displayName: "Local Vault"
+          },
+          pubKeyCredParams: [
+            { type: "public-key", alg: -7 },
+            { type: "public-key", alg: -257 }
+          ],
+          authenticatorSelection: {
+            authenticatorAttachment: "platform",
+            residentKey: "preferred",
+            userVerification: "required"
+          },
+          attestation: "none",
+          extensions: {
+            prf: {
+              eval: { first: prfSalt }
+            }
+          },
+          timeout: 60000
+        }
+      });
+
+      if (!credential) {
+        throw new Error("No credential was created");
+      }
+
+      const extensionResults = credential.getClientExtensionResults?.();
+      if (extensionResults?.prf?.enabled === false) {
+        throw new Error("WebAuthn PRF is not enabled for this credential");
+      }
+
+      const credentialId = bytesToBase64Url(new Uint8Array(credential.rawId));
+      let prfSecret = getPrfSecret(credential);
+      if (!prfSecret) {
+        prfSecret = await getBiometricPrfSecret(credentialId, prfSalt);
+      }
+
+      return {
+        credentialId,
+        userId: bytesToBase64Url(userId),
+        prfSalt: bytesToBase64(prfSalt),
+        prfSecret
+      };
+    }
+
+    async function createBiometricPayload(masterPassword) {
+      const credential = await createBiometricCredential();
+      const wrapKey = await deriveBiometricWrapKey(credential.prfSecret);
+      const wrappedMaster = await encryptText(masterPassword, wrapKey);
+
+      return {
+        version: 1,
+        createdAt: nowIso(),
+        credentialId: credential.credentialId,
+        userId: credential.userId,
+        prfSalt: credential.prfSalt,
+        wrappedMaster
+      };
+    }
+
+    function updateBiometricControls() {
+      const configured = biometricConfigured();
+      el.gateBiometric.classList.toggle("hidden", state.gateMode !== "unlock" || !configured);
+      el.setupBiometric.querySelector("span").textContent = configured ? "生体認証を更新" : "生体認証を設定";
+    }
+
+    async function unlockWithBiometric() {
+      const envelope = getEnvelope();
+      if (!biometricConfigured(envelope)) {
+        throw new Error("Biometric unlock is not configured");
+      }
+
+      const prfSalt = base64ToBytes(envelope.biometric.prfSalt);
+      const prfSecret = await getBiometricPrfSecret(envelope.biometric.credentialId, prfSalt);
+      const wrapKey = await deriveBiometricWrapKey(prfSecret);
+      const master = await decryptText(envelope.biometric.wrappedMaster, wrapKey);
+      const salt = base64ToBytes(envelope.kdf.salt);
+      const key = await deriveKey(master, salt);
+      const vault = await decryptVault(envelope, key);
+
+      state.key = key;
+      state.vault = vault;
+      state.envelope = envelope;
+      state.masterPassword = master;
+      showVault();
+    }
+
+    async function importEnvelopeFromFile(file) {
+      const text = await file.text();
+      const envelope = JSON.parse(text);
+      if (!validEnvelope(envelope)) {
+        throw new Error("Invalid envelope");
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(envelope));
+      toast("バックアップを読み込みました。マスターパスワードで開いてください。");
+      showGate();
+    }
+
+    el.tabs.addEventListener("click", (event) => {
+      const tab = event.target.closest(".tab");
+      if (!tab) return;
+      setGateMode(tab.dataset.mode);
+    });
+
+    el.gateForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const master = el.masterPassword.value;
+
+      try {
+        if (state.gateMode === "create") {
+          if (master.length < 12) {
+            toast("マスターパスワードは12文字以上にしてください。");
+            return;
+          }
+          if (master !== el.masterConfirm.value) {
+            toast("確認用パスワードが一致しません。");
+            return;
+          }
+
+          let biometric = null;
+          if (el.createWithBiometric.checked) {
+            try {
+              toast("端末の生体認証を登録しています...");
+              biometric = await createBiometricPayload(master);
+            } catch {
+              toast("生体認証は登録できませんでした。保管庫はマスターパスワードで作成します。");
+            }
+          }
+
+          const salt = randomBytes(16);
+          const key = await deriveKey(master, salt);
+          const vault = { createdAt: nowIso(), updatedAt: nowIso(), items: [] };
+          const envelope = await encryptVault(vault, key, salt);
+          if (biometric) {
+            envelope.biometric = biometric;
+          }
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(envelope));
+          state.key = key;
+          state.vault = vault;
+          state.envelope = envelope;
+          state.masterPassword = master;
+          showVault();
+          toast(biometric ? "保管庫を作成し、生体認証を登録しました。" : "保管庫を作成しました。");
+          return;
+        }
+
+        const envelope = getEnvelope();
+        if (!validEnvelope(envelope)) {
+          toast("保管庫が見つかりません。新規作成してください。");
+          return;
+        }
+        const salt = base64ToBytes(envelope.kdf.salt);
+        const key = await deriveKey(master, salt);
+        const vault = await decryptVault(envelope, key);
+        state.key = key;
+        state.vault = vault;
+        state.envelope = envelope;
+        state.masterPassword = master;
+        showVault();
+        toast("ロックを解除しました。");
+      } catch {
+        toast("開けませんでした。マスターパスワードを確認してください。");
+      }
+    });
+
+    el.gateBiometric.addEventListener("click", async () => {
+      try {
+        toast("生体認証を確認しています...");
+        await unlockWithBiometric();
+        toast("生体認証でロックを解除しました。");
+      } catch {
+        toast("生体認証で開けませんでした。マスターパスワードで開いてください。");
+      }
+    });
+
+    el.setupBiometric.addEventListener("click", async () => {
+      if (!state.vault || !state.envelope || !state.masterPassword) {
+        toast("まずマスターパスワードで保管庫を開いてください。");
+        return;
+      }
+
+      try {
+        toast("端末の生体認証を設定しています...");
+        state.envelope.biometric = await createBiometricPayload(state.masterPassword);
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.envelope));
+        updateBiometricControls();
+        toast("生体認証で開けるようにしました。");
+      } catch {
+        toast("このブラウザまたは端末では生体認証を設定できませんでした。");
+      }
+    });
+
+    el.itemForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (el.category.value === CUSTOM_CATEGORY_OPTION && !el.customCategory.value.trim()) {
+        toast("新しいカテゴリ名を入力してください。");
+        el.customCategory.focus();
+        return;
+      }
+
+      const item = formToItem();
+      if (!item.title || !item.password) {
+        toast("サイト名とパスワードは必須です。");
+        return;
+      }
+
+      const index = state.vault.items.findIndex((entry) => entry.id === item.id);
+      if (index >= 0) {
+        state.vault.items[index] = item;
+      } else {
+        state.vault.items.push(item);
+      }
+      state.selectedId = item.id;
+      await saveEnvelope();
+      renderList();
+      loadSelected();
+      toast("保存しました。");
+    });
+
+    el.search.addEventListener("input", renderList);
+    el.categoryFilter.addEventListener("change", () => {
+      const items = filteredItems();
+      if (!items.some((item) => item.id === state.selectedId)) {
+        state.selectedId = items[0]?.id || null;
+      }
+      renderList();
+      loadSelected();
+    });
+    el.newItem.addEventListener("click", emptyForm);
+    el.resetForm.addEventListener("click", emptyForm);
+    el.category.addEventListener("change", updateCategoryCustomVisibility);
+    el.password.addEventListener("input", updateStrength);
+
+    el.togglePassword.addEventListener("click", () => {
+      state.revealPassword = !state.revealPassword;
+      el.password.type = state.revealPassword ? "text" : "password";
+    });
+
+    el.fillGenerated.addEventListener("click", () => {
+      el.password.value = generatePassword();
+      updateStrength();
+      toast("生成したパスワードを入力しました。");
+    });
+
+    el.useGenerated.addEventListener("click", () => {
+      el.password.value = el.generatedPassword.value || generatePassword();
+      updateStrength();
+      toast("生成したパスワードを入力しました。");
+    });
+
+    el.copyPassword.addEventListener("click", () => copyText(el.password.value, "パスワード"));
+    el.copyUsername.addEventListener("click", () => copyText(el.username.value, "ユーザー名"));
+    el.copyGenerated.addEventListener("click", () => copyText(el.generatedPassword.value, "生成パスワード"));
+
+    el.deleteItem.addEventListener("click", async () => {
+      if (!state.selectedId) return;
+      const item = state.vault.items.find((entry) => entry.id === state.selectedId);
+      if (!confirm(`${item?.title || "この項目"}を削除しますか？`)) return;
+      state.vault.items = state.vault.items.filter((entry) => entry.id !== state.selectedId);
+      state.selectedId = state.vault.items[0]?.id || null;
+      await saveEnvelope();
+      renderList();
+      loadSelected();
+      toast("削除しました。");
+    });
+
+    el.exportVault.addEventListener("click", () => {
+      const envelope = localStorage.getItem(STORAGE_KEY);
+      if (!envelope) {
+        toast("バックアップする保管庫がありません。");
+        return;
+      }
+      const stamp = new Date().toISOString().slice(0, 10);
+      downloadFile(`local-vault-${stamp}.encrypted.json`, envelope, "application/json");
+      toast("暗号化バックアップを書き出しました。");
+    });
+
+    el.importVault.addEventListener("click", () => el.fileInput.click());
+    el.gateImport.addEventListener("click", () => el.fileInput.click());
+    el.fileInput.addEventListener("change", async () => {
+      const file = el.fileInput.files?.[0];
+      el.fileInput.value = "";
+      if (!file) return;
+      try {
+        await importEnvelopeFromFile(file);
+      } catch {
+        toast("読み込みに失敗しました。JSONファイルを確認してください。");
+      }
+    });
+
+    el.lockVault.addEventListener("click", () => {
+      showGate();
+      toast("ロックしました。");
+    });
+
+    el.deleteVault.addEventListener("click", () => {
+      const ok = confirm("この端末の暗号化保管庫を削除します。バックアップがない場合は復元できません。続行しますか？");
+      if (!ok) return;
+      localStorage.removeItem(STORAGE_KEY);
+      showGate();
+      toast("保管庫を削除しました。");
+    });
+
+    [el.length, el.upper, el.lower, el.numbers, el.symbols, el.avoidAmbiguous].forEach((input) => {
+      input.addEventListener("input", generatePassword);
+      input.addEventListener("change", generatePassword);
+    });
+    el.regenerate.addEventListener("click", () => {
+      generatePassword();
+      toast("再生成しました。");
+    });
+
+    window.addEventListener("beforeinstallprompt", (event) => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      el.installApp.classList.remove("hidden");
+    });
+
+    el.installApp.addEventListener("click", async () => {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
+      el.installApp.classList.add("hidden");
+    });
+
+    window.addEventListener("appinstalled", () => {
+      deferredInstallPrompt = null;
+      el.installApp.classList.add("hidden");
+      toast("インストールしました。");
+    });
+
+    if ("serviceWorker" in navigator && location.protocol !== "file:") {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("service-worker.js").catch(() => {});
+      });
+    }
+
+    showGate();
+  </script>
+</body>
+</html>
