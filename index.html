@@ -427,6 +427,14 @@
       overflow-wrap: anywhere;
     }
 
+    .detail-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
     .detail-form,
     .generator-body,
     .gate-form {
@@ -447,6 +455,13 @@
       grid-template-columns: minmax(0, 1fr) auto auto auto;
       gap: 8px;
       align-items: end;
+    }
+
+    .url-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
     }
 
     .inline-row {
@@ -749,6 +764,11 @@
         align-items: flex-start;
       }
 
+      .detail-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
       .detail-form,
       .generator-body,
       .gate-form {
@@ -918,6 +938,12 @@
     <symbol id="i-fingerprint" viewBox="0 0 24 24">
       <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M4 13a8 8 0 0 1 16 0M8 13a4 4 0 0 1 8 0M12 13v2M6 17c1.1 2.4 3.1 4 6 4M18 17c-.7 1.6-1.8 2.8-3.4 3.5M9 3.6A10.5 10.5 0 0 1 22 13M2 13A10.5 10.5 0 0 1 6 4.8M12 17c0 1.5-.4 2.8-1.2 4"/>
     </symbol>
+    <symbol id="i-external-link" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 4h6v6M20 4l-9 9M20 14v5H5V4h5"/>
+    </symbol>
+    <symbol id="i-log-in" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 3h5v18h-5M10 17l5-5-5-5M15 12H3"/>
+    </symbol>
     <symbol id="i-log-out" viewBox="0 0 24 24">
       <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 17l5-5-5-5M15 12H3M21 4v16"/>
     </symbol>
@@ -1042,9 +1068,15 @@
         <section class="detail">
           <div class="detail-header">
             <h2 id="detailTitle">新しいログイン</h2>
-            <button id="copyUsername" class="icon-btn" type="button" title="ユーザー名をコピー" aria-label="ユーザー名をコピー">
-              <svg class="icon"><use href="#i-copy"></use></svg>
-            </button>
+            <div class="detail-actions">
+              <button id="loginAssist" class="btn secondary" type="button">
+                <svg class="icon"><use href="#i-log-in"></use></svg>
+                <span>ログイン補助</span>
+              </button>
+              <button id="copyUsername" class="icon-btn" type="button" title="ユーザー名をコピー" aria-label="ユーザー名をコピー">
+                <svg class="icon"><use href="#i-copy"></use></svg>
+              </button>
+            </div>
           </div>
 
           <form id="itemForm" class="detail-form" autocomplete="off">
@@ -1056,7 +1088,12 @@
               </div>
               <div class="field">
                 <label for="url">URL</label>
-                <input id="url" class="input" type="url" placeholder="https://example.com">
+                <div class="url-row">
+                  <input id="url" class="input" type="url" placeholder="https://example.com">
+                  <button id="openUrl" class="icon-btn" type="button" title="URLを開く" aria-label="URLを開く">
+                    <svg class="icon"><use href="#i-external-link"></use></svg>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1232,6 +1269,7 @@
       itemId: document.getElementById("itemId"),
       title: document.getElementById("title"),
       url: document.getElementById("url"),
+      openUrl: document.getElementById("openUrl"),
       username: document.getElementById("username"),
       category: document.getElementById("category"),
       customCategory: document.getElementById("customCategory"),
@@ -1240,6 +1278,7 @@
       togglePassword: document.getElementById("togglePassword"),
       fillGenerated: document.getElementById("fillGenerated"),
       copyPassword: document.getElementById("copyPassword"),
+      loginAssist: document.getElementById("loginAssist"),
       copyUsername: document.getElementById("copyUsername"),
       strengthLabel: document.getElementById("strengthLabel"),
       strengthBar: document.getElementById("strengthBar"),
@@ -1483,6 +1522,58 @@
       return `https://${value}`;
     }
 
+    function openCurrentUrl() {
+      const url = normalizeUrl(el.url.value);
+      if (!url) {
+        toast("URLが入力されていません。");
+        el.url.focus();
+        return;
+      }
+
+      try {
+        const opened = window.open(url, "_blank", "noopener,noreferrer");
+        if (opened) {
+          toast("URLを開きました。");
+        } else {
+          toast("ブラウザのポップアップ設定でURLを開けませんでした。");
+        }
+      } catch {
+        toast("URLを開けませんでした。");
+      }
+    }
+
+    async function loginAssist() {
+      const url = normalizeUrl(el.url.value);
+      if (!url) {
+        toast("URLが入力されていません。");
+        el.url.focus();
+        return;
+      }
+
+      if (!el.username.value.trim()) {
+        toast("ユーザー名が入力されていません。");
+        el.username.focus();
+        return;
+      }
+
+      let opened = null;
+      try {
+        opened = window.open(url, "_blank", "noopener,noreferrer");
+      } catch {
+        opened = null;
+      }
+
+      const copied = await copyText(el.username.value, "ユーザー名");
+      if (!opened) {
+        toast("URLを開けませんでした。ユーザー名はコピー済みです。");
+        return;
+      }
+
+      if (copied) {
+        toast("ログインページを開き、ユーザー名をコピーしました。次にパスワードをコピーしてください。");
+      }
+    }
+
     function avatarText(item) {
       const source = item.title || item.username || "?";
       return source.trim().slice(0, 1) || "?";
@@ -1712,7 +1803,7 @@
     async function copyText(text, label) {
       if (!text) {
         toast("コピーする値がありません。");
-        return;
+        return false;
       }
 
       try {
@@ -1729,8 +1820,10 @@
           area.remove();
         }
         toast(`${label}をコピーしました。`);
+        return true;
       } catch {
         toast("コピーに失敗しました。");
+        return false;
       }
     }
 
@@ -2143,6 +2236,8 @@
     el.newItem.addEventListener("click", emptyForm);
     el.resetForm.addEventListener("click", emptyForm);
     el.category.addEventListener("change", updateCategoryCustomVisibility);
+    el.openUrl.addEventListener("click", openCurrentUrl);
+    el.loginAssist.addEventListener("click", loginAssist);
     el.password.addEventListener("input", updateStrength);
 
     el.togglePassword.addEventListener("click", () => {
